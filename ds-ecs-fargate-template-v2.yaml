@@ -162,6 +162,21 @@ Parameters:
       that you select at least two subnets.
     ConstraintDescription: must be the subnet Id of an existing subnet in mentioned VPC.
     AllowedPattern: .+
+  EnableSSHServer:
+    AllowedValues:
+      - 'true'
+      - 'false'
+    Default: 'true'
+    Description: Enable SSH connect
+    Type: String
+  SshPassword:
+    Description: (Optional if EnableSSHServer equals false) Enter password for ssh connect
+    Type: String
+  BucketName:
+    Type: String
+    Description: >-
+      (Optional) Name of the S3 bucket for DataSunrise logs. If empty,
+      the backup uploading will not be configured.
 
   # CONTAINER ONLY
   VPC:
@@ -233,8 +248,12 @@ Metadata:
           - DBUser
           - DBPassword
           - SubnetsConfig
+          - EnableSSHServer
+          - SshPassword
+          - BucketName
 
 Conditions:
+  HasS3Name: !Not [!Equals ['', !Ref BucketName]]
   #HasS3Name: !Not [!Equals ['', !Ref BackupS3BucketName]]
   #HasNoAlarm: !Equals ['', !Ref AlarmEmail]
   #HasAlarm: !Not [!Equals ['', !Ref AlarmEmail]]
@@ -502,6 +521,14 @@ Resources:
               Value: !Ref DBPassword
             - Name: BACKEND_PORT
               Value: !Ref ContainerPort
+            - Name: ENABLE_SSH_SERVER
+              Value: !Ref EnableSSHServer
+            - Name: SSH_PASS
+              Value: !Ref SshPassword
+            - Name: BUCKET_NAME
+              Value: !Ref BucketName
+            - Name: UPLOAD_LOGS_ON_SHUTDOWN
+              Value: '1'
 
   # A role needed by ECS
   ExecutionRole:
@@ -553,6 +580,10 @@ Resources:
       GroupDescription: !Join ['', [!Ref 'AWS::StackName', ContainerSecurityGroup]]
       VpcId: !Ref VPC
       SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '22'
+          ToPort: '22'
+          CidrIp: !Ref UserLocationCIDR
         - IpProtocol: tcp
           FromPort: !Ref ContainerPort
           ToPort: !Ref ContainerPort
@@ -681,6 +712,23 @@ Resources:
         ScaleInCooldown: 10
         ScaleOutCooldown: 10
         TargetValue: 80
+
+  S3AccessPolicy:
+    Type: 'AWS::IAM::ManagedPolicy'
+    Condition: HasS3Name
+    Properties:
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - 's3:HeadBucket'
+              - 's3:GetObject*'
+              - 's3:PutObject*'
+              - 's3:List*'
+            Resource:
+              - !Join ['', ['arn:aws:s3:::', !Ref BucketName,'/*']]
+              - !Join ['', ['arn:aws:s3:::', !Ref BucketName]]
 
 Outputs:
   DatasunriseConsoleURL:
