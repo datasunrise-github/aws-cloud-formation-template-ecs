@@ -555,8 +555,8 @@ Resources:
             Principal:
               Service: ecs-tasks.amazonaws.com
             Action: 'sts:AssumeRole'
-      # ManagedPolicyArns:
-      #   -
+      ManagedPolicyArns:
+          - !If [HasS3Name, !Ref S3AccessPolicy, !Ref 'AWS::NoValue']
       # Policies:
       #   -
 
