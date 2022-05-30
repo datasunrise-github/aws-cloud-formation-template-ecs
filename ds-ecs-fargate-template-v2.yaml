@@ -177,6 +177,14 @@ Parameters:
     Description: >-
       (Optional) Name of the S3 bucket for DataSunrise logs. If empty,
       the backup uploading will not be configured.
+  AFGenerateNativeDumps:
+    Type: String
+    AllowedValues:
+      - '1'
+      - '0'
+    Default: '1'
+    Description: >-
+      (Optional) Generate native dumps on VM and uploading to S3 bucket.
 
   # CONTAINER ONLY
   VPC:
@@ -251,6 +259,7 @@ Metadata:
           - EnableSSHServer
           - SshPassword
           - BucketName
+          - AFGenerateNativeDumps
 
 Conditions:
   HasS3Name: !Not [!Equals ['', !Ref BucketName]]
@@ -529,6 +538,10 @@ Resources:
               Value: !Ref BucketName
             - Name: UPLOAD_LOGS_ON_SHUTDOWN
               Value: '1'
+            - Name: UPLOAD_CORE_ON_SHUTDOWN
+              Value: '1'
+            - Name: AF_GENERATE_NATIVE_DUMPS
+              Value: !Ref AFGenerateNativeDumps
 
   # A role needed by ECS
   ExecutionRole:
