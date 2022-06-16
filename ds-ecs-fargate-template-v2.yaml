@@ -43,14 +43,14 @@ Parameters:
     AllowedValues:
       - Postgres
       - MySQL
- #     - MSSQL
+      - MSSQL
   AuditType:
     Type: String
     Default: Postgres
     AllowedValues:
       - Postgres
       - MySQL
-#      - MSSQL
+      - MSSQL
       - AuroraPostgres
       - AuroraMySQL
   DBUser:
@@ -74,7 +74,8 @@ Parameters:
     Description: >-
       The database instance class that allocates the computational, network, and
       memory capacity required by planned workload of this database instance.
-    Default: db.t3.medium
+      Classes t3.small, t3.medium and t3.large are not available for MSSQL.
+    Default: db.m5.large
     AllowedValues:
       - db.t3.small
       - db.t3.medium
@@ -85,13 +86,17 @@ Parameters:
       - db.m5.xlarge
       - db.m5.2xlarge
       - db.m5.4xlarge
+      - db.m5.8xlarge
       - db.m5.12xlarge
+      - db.m5.16xlarge
       - db.m5.24xlarge
       - db.r5.large
       - db.r5.xlarge
       - db.r5.2xlarge
       - db.r5.4xlarge
+      - db.r5.8xlarge
       - db.r5.12xlarge
+      - db.r5.16xlarge
       - db.r5.24xlarge
   DBDictName:
     Type: String
@@ -116,7 +121,7 @@ Parameters:
     Description: 'The size of the database (Gb), minimum restriction by AWS is 20GB'
     MinValue: '20'
     MaxValue: '1024'
-    ConstraintDescription: must be between 5 and 1024Gb.
+    ConstraintDescription: must be between 20 and 1024Gb.
   AuditDBClass:
     Type: String
     Description: >-
@@ -278,7 +283,7 @@ Conditions:
   ParameterGroupPg: !Or [!Equals [!Ref DictionaryType, 'Postgres'],!Equals [ !Ref AuditType, 'Postgres']]
   ParameterGroupMy: !Or [!Equals [!Ref DictionaryType, 'MySQL'], !Equals [ !Ref AuditType, 'MySQL']]
   ParameterGroupMsDictionary: !Equals [!Ref DictionaryType, 'MSSQL']
-  ParameterGroupMsAudit: !Equals [!Ref DictionaryType, 'MSSQL']
+  ParameterGroupMsAudit: !Equals [!Ref AuditType, 'MSSQL']
   isAuroraCluster: !Or [!Equals [!Ref AuditType, 'AuroraPostgres'],!Equals [ !Ref AuditType, 'AuroraMySQL']]
   isNotAuroraCluster: !Not [!Or [!Equals [!Ref AuditType, 'AuroraPostgres'],!Equals [ !Ref AuditType, 'AuroraMySQL']]]
   #s3link: !Equals [!Select [0, !Split ['//', !Ref DSDistributionUrl]], 's3:']
@@ -341,7 +346,7 @@ Resources:
         - !Ref DSConfigSG
       DBSubnetGroupName: !Ref DSDBSubnetGrp
       DBParameterGroupName: !If [ DictionaryPostgres, !Ref DSParameterGroupPostgres, !If [ DictionaryMysql, !Ref DSParameterGroupMysql, !Ref DSParameterGroupMssqlDictionary ] ]
-      StorageEncrypted: !If [ DictionaryMssql, !Ref 'AWS::NoValue', 'True' ]
+      StorageEncrypted: "True"
       StorageType: gp2
       LicenseModel: !If [ DictionaryPostgres, !FindInMap [ Consts, V1, PostgresLicenseModel ], !If [ DictionaryMysql, !FindInMap [ Consts, V1, MysqlLicenseModel ], !FindInMap [ Consts, V1, MssqlLicenseModel ] ] ]
     DeletionPolicy: Snapshot
@@ -542,6 +547,10 @@ Resources:
               Value: '1'
             - Name: AF_GENERATE_NATIVE_DUMPS
               Value: !Ref AFGenerateNativeDumps
+            - Name: FARGATE_MSSQL_AUDIT
+              Value: !If [AuditMssql, "true", "false"]
+            - Name: FARGATE_MSSQL_DICTIONARY
+              Value: !If [DictionaryMssql, "true", "false"]
 
   # A role needed by ECS
   ExecutionRole:
