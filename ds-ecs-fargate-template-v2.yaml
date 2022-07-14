@@ -35,6 +35,7 @@ Mappings:
       PostgresLicenseModel: 'postgresql-license'
       MysqlLicenseModel: 'general-public-license'
       MssqlLicenseModel: 'license-included'
+      HourlyBillingLic: 'aT3Ma4BfGhCzDzhAerfmTq8yGS1Zwm4uLPio8Rv1CdDBhbwF0Lzwzh+aEyFaz+hoFnoqnwzDynZ8L4QRH1WDrg==:0:{"CustomerName":"aws","AWSMetering":"true"}'
 
 Parameters:
   DictionaryType:
@@ -220,6 +221,13 @@ Parameters:
   UserLocationCIDR:
     Type: String
     Default: 0.0.0.0/0
+    Description: >-
+      IP address range that can be used access to the DataSunrise console and database proxy.
+      Also for TDB if specified.
+  AdminLocationCIDR:
+    Type: String
+    Default: 0.0.0.0/0
+    Description: IP address range that can be used access port 22, for appliance to the container.
   ContainerCpu:
     Type: Number
     Default: 2048
@@ -236,6 +244,82 @@ Parameters:
       - "2GB, 3GB, 4GB, 5GB, 6GB, 7GB, 8GB - Available cpu values: 1024 (1 vCPU)"
       - "Between 4GB and 16GB in 1GB increments - Available cpu values: 2048 (2 vCPU)"
       - "Between 8GB and 30GB in 1GB increments - Available cpu values: 4096 (4 vCPU)"
+  AWSCLIProxy:
+    Type: String
+    Description: >-
+      (Optional) In some cases of using private networks it is necessary to set
+      up proxy for AWS CLI (PutMetrics/S3). For example
+      http://[username[:password]@]<proxy_host>:<proxy_port>
+    AllowedPattern: '(https?:\/\/((\S*@)?([a-zA-Z1-9.-]+(:\d{1,5}){1})))?'
+    ConstraintDescription: 'You need specify the connection in a similar format "http://[username[:password]@]<proxy_host>:<proxy_port>"'
+  DSLicenseType:
+    Type: String
+    Default: BYOL
+    AllowedValues:
+      - HourlyBilling
+      - BYOL
+    Description: >-
+      Preferred licensing type. If you select BYOL licensing, you must enter
+      valid license key into DSLicenseKey field.
+  DSLicenseKey:
+    Type: String
+    Default: Do not change this field if you are using hourly billing
+    Description: The DataSunrise license key.
+  TDBType:
+    Type: String
+    Description: Type of target database.
+    AllowedValues:
+      - Aurora MySQL
+      - Aurora PostgreSQL
+      - Cassandra
+      - DB2
+      - DynamoDB
+      - Greenplum
+      - Hive
+      - Impala
+      - MariaDB
+      - MongoDB
+      - MSSQL
+      - MySQL
+      - Netezza
+      - Oracle
+      - PostgreSQL
+      - Redshift
+      - SAP HANA
+      - Teradata
+      - Vertica
+      - ''
+  TDBHost:
+    Type: String
+    Description: >-
+      The target database endpoint address. Please make sure that database is
+      accessible from network, mentioned upper.
+  TDBPort:
+    Type: String
+    Description: The target database endpoint port. It will be applied for proxy port too.
+  TDBName:
+    Type: String
+    Description: The target database name.
+  TDBLogin:
+    Type: String
+    Description: Login for target database user.
+  TDBPassword:
+    Type: String
+    NoEcho: 'true'
+    Description: Password for target database user.
+  TDBSecurityGroupAccess:
+    Type: String
+    Description: >-
+      Set Yes if you need to add access to the TDB security group (TDBPort will be added to the ingress rules).
+      Then specify the security group in the list below.
+    AllowedValues:
+      - 'Yes'
+      - 'No'
+    Default: 'No'
+  TDBSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup::GroupName'
+    Description: Security Group of the Database to be protected.
+    Default: default
 
 
 Metadata:
@@ -245,6 +329,10 @@ Metadata:
           default: Network Configuration
         Parameters:
           - UserLocationCIDR
+          - AdminLocationCIDR
+          - VPC
+          - VpcCidr
+          - Subnets
       - Label:
           default: Dictionary & Audit Database Configuration
         Parameters:
@@ -261,10 +349,40 @@ Metadata:
           - DBUser
           - DBPassword
           - SubnetsConfig
+      - Label:
+          default: Container Configuration
+        Parameters:
+          - Certificate
+          - ContainerCpu
+          - ContainerMemory
+          - ContainerPort
+          - ContainerProxyPort
+          - ContainersCount
+          - Image
           - EnableSSHServer
           - SshPassword
           - BucketName
           - AFGenerateNativeDumps
+      - Label:
+          default: Proxy Options
+        Parameters:
+          - AWSCLIProxy
+      - Label:
+          default: License options
+        Parameters:
+          - DSLicenseType
+          - DSLicenseKey
+      - Label:
+          default: Target Database Configuration.
+        Parameters:
+          - TDBType
+          - TDBHost
+          - TDBPort
+          - TDBName
+          - TDBLogin
+          - TDBPassword
+          - TDBSecurityGroupAccess
+          - TDBSecurityGroup
 
 Conditions:
   HasS3Name: !Not [!Equals ['', !Ref BucketName]]
@@ -287,7 +405,10 @@ Conditions:
   isAuroraCluster: !Or [!Equals [!Ref AuditType, 'AuroraPostgres'],!Equals [ !Ref AuditType, 'AuroraMySQL']]
   isNotAuroraCluster: !Not [!Or [!Equals [!Ref AuditType, 'AuroraPostgres'],!Equals [ !Ref AuditType, 'AuroraMySQL']]]
   #s3link: !Equals [!Select [0, !Split ['//', !Ref DSDistributionUrl]], 's3:']
-  isProxyPort: !Not [!Equals ['', !Ref ContainerProxyPort]]
+  isBYOLLicense: !Equals ['BYOL', !Ref DSLicenseType]
+  isTDBPort: !Not [!Equals ['', !Ref TDBPort]]
+  isTDBSecurityGroup: !Equals ['Yes', !Ref TDBSecurityGroupAccess]
+  isEnableSSHServer: !Equals ['true', !Ref EnableSSHServer]
 
 Resources:
   DSDBSubnetGrp:
@@ -499,7 +620,7 @@ Resources:
           Image: !Ref Image
           PortMappings:
             - ContainerPort: !Ref ContainerPort
-            - ContainerPort: !If [isProxyPort, !Ref ContainerProxyPort, !Ref 'AWS::NoValue']
+            - ContainerPort: !Ref ContainerProxyPort
           # Send logs to CloudWatch Logs
           LogConfiguration:
             LogDriver: awslogs
@@ -551,6 +672,26 @@ Resources:
               Value: !If [AuditMssql, "true", "false"]
             - Name: FARGATE_MSSQL_DICTIONARY
               Value: !If [DictionaryMssql, "true", "false"]
+            - Name: AWS_CLI_PROXY
+              Value: !Ref AWSCLIProxy
+            - Name: DS_LICENSE_TYPE
+              Value: !Ref DSLicenseType
+            - Name: DS_LICENSE_KEY
+              Value: !If [isBYOLLicense, !Ref DSLicenseKey, !FindInMap [Consts, V1, HourlyBillingLic]]
+            - Name: TDB_TYPE
+              Value: !Ref TDBType
+            - Name: TDB_HOST
+              Value: !Ref TDBHost
+            - Name: TDB_PORT
+              Value: !Ref TDBPort
+            - Name: TDB_NAME
+              Value: !Ref TDBName
+            - Name: TDB_LOGIN
+              Value: !Ref TDBLogin
+            - Name: TDB_PASSWORD
+              Value: !Ref TDBPassword
+            - Name: DEPLOYMENT_NAME
+              Value: !Ref 'AWS::StackName'
 
   # A role needed by ECS
   ExecutionRole:
@@ -579,8 +720,20 @@ Resources:
             Action: 'sts:AssumeRole'
       ManagedPolicyArns:
           - !If [HasS3Name, !Ref S3AccessPolicy, !Ref 'AWS::NoValue']
-      # Policies:
-      #   -
+      Policies:
+        - PolicyName: !Join [ '', [ !Ref 'AWS::StackName', '-DataSunrise-Policy' ] ]
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'ecs:DescribeTasks'
+                  - 'ecs:DescribeServices'
+                  - 'cloudwatch:GetMetricStatistics'
+                  - 'ec2:DescribeSubnets'
+                  - 'rds:DescribeDBInstances'
+                Resource: '*'
+
 
   # A role needed for auto scaling
   AutoScalingRole:
@@ -603,10 +756,6 @@ Resources:
       VpcId: !Ref VPC
       SecurityGroupIngress:
         - IpProtocol: tcp
-          FromPort: '22'
-          ToPort: '22'
-          CidrIp: !Ref UserLocationCIDR
-        - IpProtocol: tcp
           FromPort: !Ref ContainerPort
           ToPort: !Ref ContainerPort
           SourceSecurityGroupId: !Ref LoadBalancerSecurityGroup
@@ -615,17 +764,65 @@ Resources:
           ToPort: !Ref ContainerPort
           CidrIp: !Ref VpcCidr
 
+  SSHPortIngress:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    DependsOn:
+      - ContainerSecurityGroup
+    Condition: isEnableSSHServer
+    Properties:
+      GroupId: !GetAtt ContainerSecurityGroup.GroupId
+      IpProtocol: tcp
+      FromPort: '22'
+      ToPort: '22'
+      CidrIp: !Ref AdminLocationCIDR
+
   ProxyPortIngress:
     Type: 'AWS::EC2::SecurityGroupIngress'
     DependsOn:
       - ContainerSecurityGroup
-    Condition: isProxyPort
     Properties:
       GroupId: !GetAtt ContainerSecurityGroup.GroupId
       IpProtocol: tcp
       FromPort: !Ref ContainerProxyPort
       ToPort: !Ref ContainerProxyPort
       CidrIp: !Ref UserLocationCIDR
+
+  TDBPortIngress:
+    Type: AWS::EC2::SecurityGroupIngress
+    DependsOn:
+      - ContainerSecurityGroup
+    Condition: isTDBPort
+    Properties:
+      GroupId: !GetAtt ContainerSecurityGroup.GroupId
+      IpProtocol: tcp
+      FromPort: !Ref TDBPort
+      ToPort: !Ref TDBPort
+      CidrIp: !Ref UserLocationCIDR
+
+  # to healthcheck proxies between containers
+  TDBProxyPortIngress:
+    Type: AWS::EC2::SecurityGroupIngress
+    DependsOn:
+      - ContainerSecurityGroup
+    Condition: isTDBPort
+    Properties:
+      GroupId: !GetAtt ContainerSecurityGroup.GroupId
+      IpProtocol: tcp
+      FromPort: '11002'
+      ToPort: '11002'
+      CidrIp: !Ref VpcCidr
+
+  TDBSGIngressRule:
+    Type: AWS::EC2::SecurityGroupIngress
+    DependsOn:
+      - ContainerSecurityGroup
+    Condition: isTDBSecurityGroup
+    Properties:
+      GroupName: !Ref TDBSecurityGroup
+      IpProtocol: tcp
+      FromPort: !Ref TDBPort
+      ToPort: !Ref TDBPort
+      SourceSecurityGroupId: !GetAtt ContainerSecurityGroup.GroupId
 
   LoadBalancerSecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -652,7 +849,7 @@ Resources:
         MaximumPercent: 200
       DesiredCount: 2
       # This may need to be adjusted if the container takes a while to start up
-      HealthCheckGracePeriodSeconds: 30
+      HealthCheckGracePeriodSeconds: 60
       LaunchType: FARGATE
       NetworkConfiguration:
         AwsvpcConfiguration:
