@@ -178,6 +178,7 @@ Parameters:
   SshPassword:
     Description: (Optional if EnableSSHServer equals false) Enter password for ssh connect
     Type: String
+    NoEcho: 'true'
   BucketName:
     Type: String
     Description: >-
@@ -265,6 +266,13 @@ Parameters:
     Type: String
     Default: Do not change this field if you are using hourly billing
     Description: The DataSunrise license key.
+  DSAdminPassword:
+    Type: String
+    NoEcho: 'true'
+    Description: The password must contain at least 8 characters, lower and upper case, numbers and special characters.
+    MinLength: '8'
+    MaxLength: '41'
+    AllowedPattern: ^.*(?=.{8,})(?=.*[a-zA-Z])(?=.*\d)(?=.*[\[\]|\\{}=_\/?<>,.:;~`"!@#$%^&*()+-]).*$
   TDBType:
     Type: String
     Description: Type of target database.
@@ -368,10 +376,11 @@ Metadata:
         Parameters:
           - AWSCLIProxy
       - Label:
-          default: License options
+          default: DataSunrise Configuration
         Parameters:
           - DSLicenseType
           - DSLicenseKey
+          - DSAdminPassword
       - Label:
           default: Target Database Configuration.
         Parameters:
@@ -690,6 +699,8 @@ Resources:
               Value: !Ref TDBLogin
             - Name: TDB_PASSWORD
               Value: !Ref TDBPassword
+            - Name: DS_ADMIN_PASSWORD
+              Value: !Ref DSAdminPassword
             - Name: DEPLOYMENT_NAME
               Value: !Ref 'AWS::StackName'
 
@@ -729,6 +740,7 @@ Resources:
                 Action:
                   - 'ecs:DescribeTasks'
                   - 'ecs:DescribeServices'
+                  - 'ecs:ListClusters'
                   - 'cloudwatch:GetMetricStatistics'
                   - 'ec2:DescribeSubnets'
                   - 'rds:DescribeDBInstances'
