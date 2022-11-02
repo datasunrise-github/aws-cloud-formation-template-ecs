@@ -19,13 +19,13 @@ Mappings:
       AuditEnginePg: postgres
       AuditEngineMy: mysql
       AuditEngineMs: sqlserver-se
-      EngineVersionPg: '14.2'
-      EngineVersionMy: '5.7.37'
-      EngineVersionMs: '14.00.3401.7.v1'
+      EngineVersionPg: '14'
+      EngineVersionMy: '5.7'
+      EngineVersionMs: '14.00'
       AuditAuroraEnginePg: aurora-postgresql
       AuditAuroraEngineMy: aurora-mysql
-      AuditAuroraEngineVersionPg: '13.6'
-      AuditAuroraEngineVersionMy: '5.7.37'
+      AuditAuroraEngineVersionPg: '13'
+      AuditAuroraEngineVersionMy: '5.7'
       ParameterGroupFamilyPg: 'postgres14'
       ParameterGroupFamilyMy: 'MySQL5.7'
       DictionaryParameterGroupFamilyMs: 'sqlserver-se-14.0'
