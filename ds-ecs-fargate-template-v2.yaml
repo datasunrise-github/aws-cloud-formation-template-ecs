@@ -273,6 +273,12 @@ Parameters:
     MinLength: '8'
     MaxLength: '41'
     AllowedPattern: ^.*(?=.{8,})(?=.*[a-zA-Z])(?=.*\d)(?=.*[\[\]|\\{}=_\/?<>,.:;~`"!@#$%^&*()+-]).*$
+  DSPrefix:
+    Type: String
+    Description: >-
+      (Optional) Prefix for DS logical server name. If not specified it will be added automatically as ds.
+    AllowedPattern: '[a-zA-Z0-9]*'
+    MaxLength: '8'
   TDBType:
     Type: String
     Description: Type of target database.
@@ -381,6 +387,7 @@ Metadata:
           - DSLicenseType
           - DSLicenseKey
           - DSAdminPassword
+          - DSPrefix
       - Label:
           default: Target Database Configuration.
         Parameters:
@@ -703,6 +710,8 @@ Resources:
               Value: !Ref DSAdminPassword
             - Name: DEPLOYMENT_NAME
               Value: !Ref 'AWS::StackName'
+            - Name: DS_SERVER_NAME_PREFIX
+              Value: !Ref DSPrefix
 
   # A role needed by ECS
   ExecutionRole:
