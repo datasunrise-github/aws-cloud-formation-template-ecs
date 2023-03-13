@@ -334,6 +334,10 @@ Parameters:
     Type: 'AWS::EC2::SecurityGroup::GroupName'
     Description: Security Group of the Database to be protected.
     Default: default
+  TDBOracleWalletBucket:
+    Type: String
+    Description: >-
+      (Optional) The name of the S3 bucket that contains Oracle Wallet files.
 
 
 Metadata:
@@ -399,9 +403,11 @@ Metadata:
           - TDBPassword
           - TDBSecurityGroupAccess
           - TDBSecurityGroup
+          - TDBOracleWalletBucket
 
 Conditions:
   HasS3Name: !Not [!Equals ['', !Ref BucketName]]
+  HasS3OracleWallet: !Not [!Equals ['', !Ref TDBOracleWalletBucket]]
   #HasS3Name: !Not [!Equals ['', !Ref BackupS3BucketName]]
   #HasNoAlarm: !Equals ['', !Ref AlarmEmail]
   #HasAlarm: !Not [!Equals ['', !Ref AlarmEmail]]
@@ -712,6 +718,8 @@ Resources:
               Value: !Ref 'AWS::StackName'
             - Name: DS_SERVER_NAME_PREFIX
               Value: !Ref DSPrefix
+            - Name: CUSTOM_ORACLE_WALLET_AWS_BUCKET
+              Value: !Ref TDBOracleWalletBucket
 
   # A role needed by ECS
   ExecutionRole:
@@ -740,6 +748,7 @@ Resources:
             Action: 'sts:AssumeRole'
       ManagedPolicyArns:
           - !If [HasS3Name, !Ref S3AccessPolicy, !Ref 'AWS::NoValue']
+          - !If [HasS3OracleWallet, !Ref OracleWalletS3AccessPolicy, !Ref 'AWS::NoValue']
       Policies:
         - PolicyName: !Join [ '', [ !Ref 'AWS::StackName', '-DataSunrise-Policy' ] ]
           PolicyDocument:
@@ -969,6 +978,21 @@ Resources:
             Resource:
               - !Join ['', ['arn:aws:s3:::', !Ref BucketName,'/*']]
               - !Join ['', ['arn:aws:s3:::', !Ref BucketName]]
+
+  OracleWalletS3AccessPolicy:
+    Type: 'AWS::IAM::ManagedPolicy'
+    Condition: HasS3OracleWallet
+    Properties:
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - 's3:GetObject*'
+              - 's3:List*'
+            Resource:
+              - !Join [ '', [ 'arn:aws:s3:::', !Ref TDBOracleWalletBucket,'/*' ] ]
+              - !Join [ '', [ 'arn:aws:s3:::', !Ref TDBOracleWalletBucket ] ]
 
 Outputs:
   DatasunriseConsoleURL:
