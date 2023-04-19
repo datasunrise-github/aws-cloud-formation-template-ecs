@@ -338,6 +338,16 @@ Parameters:
     Type: String
     Description: >-
       (Optional) The name of the S3 bucket that contains Oracle Wallet files.
+  TDBEncryption:
+    Type: String
+    Description: >-
+      (Optional) Use Encryption when connecting to the database (supported only
+      for Aurora MySQL, MySQL, MariaDB, Cassandra, DB2, DynamoDB, MongoDB, Oracle,
+      SAP HANA)
+    AllowedValues:
+      - 'true'
+      - 'false'
+    Default: 'false'
 
 
 Metadata:
@@ -404,6 +414,7 @@ Metadata:
           - TDBSecurityGroupAccess
           - TDBSecurityGroup
           - TDBOracleWalletBucket
+          - TDBEncryption
 
 Conditions:
   HasS3Name: !Not [!Equals ['', !Ref BucketName]]
@@ -712,14 +723,17 @@ Resources:
               Value: !Ref TDBLogin
             - Name: TDB_PASSWORD
               Value: !Ref TDBPassword
+            - Name: CUSTOM_ORACLE_WALLET_AWS_BUCKET
+              Value: !Ref TDBOracleWalletBucket
+            - Name: TDB_ENCRYPTION
+              Value: !Ref TDBEncryption
             - Name: DS_ADMIN_PASSWORD
               Value: !Ref DSAdminPassword
             - Name: DEPLOYMENT_NAME
               Value: !Ref 'AWS::StackName'
             - Name: DS_SERVER_NAME_PREFIX
               Value: !Ref DSPrefix
-            - Name: CUSTOM_ORACLE_WALLET_AWS_BUCKET
-              Value: !Ref TDBOracleWalletBucket
+
 
   # A role needed by ECS
   ExecutionRole:
