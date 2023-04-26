@@ -774,6 +774,7 @@ Resources:
                   - 'ecs:DescribeServices'
                   - 'ecs:ListClusters'
                   - 'cloudwatch:GetMetricStatistics'
+                  - 'cloudwatch:PutMetricData'
                   - 'ec2:DescribeSubnets'
                   - 'rds:DescribeDBInstances'
                 Resource: '*'
