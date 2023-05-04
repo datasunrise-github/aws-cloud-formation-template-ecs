@@ -777,6 +777,8 @@ Resources:
                   - 'cloudwatch:PutMetricData'
                   - 'ec2:DescribeSubnets'
                   - 'rds:DescribeDBInstances'
+                  - 'rds:DescribeDBClusters'
+                  - 'aws-marketplace:MeterUsage'
                 Resource: '*'
 
 
