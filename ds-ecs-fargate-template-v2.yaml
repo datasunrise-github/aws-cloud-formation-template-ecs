@@ -67,9 +67,11 @@ Parameters:
   DBPassword:
     NoEcho: 'true'
     Type: String
-    Description: The database administrator account password.
+    Description: >-
+      The database administrator account password.
+      You can also specify the arn of the secret to retrieve the password from AWS Secrets Manager.
+      For example: arn:aws:secretsmanager:us-east-1:123456789012:secret:mysecret-aBcD12
     MinLength: '8'
-    MaxLength: '41'
   DictionaryDBClass:
     Type: String
     Description: >-
@@ -442,6 +444,7 @@ Conditions:
   isTDBPort: !Not [!Equals ['', !Ref TDBPort]]
   isTDBSecurityGroup: !Equals ['Yes', !Ref TDBSecurityGroupAccess]
   isEnableSSHServer: !Equals ['true', !Ref EnableSSHServer]
+  isSecretPass: !Equals ['arn', !Select [ 0, !Split [':', !Ref DBPassword]]]
 
 Resources:
   DSDBSubnetGrp:
@@ -494,7 +497,7 @@ Resources:
       DBName: !If [ DictionaryMssql, !Ref 'AWS::NoValue', !Ref DBDictName ]
       MultiAZ: !Ref MultiAzDictionary
       MasterUsername: !Ref DBUser
-      MasterUserPassword: !Ref DBPassword
+      MasterUserPassword: !If [ isSecretPass, !Join [ '', [ '{{resolve:secretsmanager:', !Ref DBPassword, ':SecretString:password}}' ] ], !Ref DBPassword ]
       AllocatedStorage: !Ref DictionaryDBStorageSize
       VPCSecurityGroups:
         - !Ref DSConfigSG
@@ -520,7 +523,7 @@ Resources:
       #MSSQL DOENST HAVE A NAME FOR DB SHOULD BE AWS::NOVALUE IN CASE ITS MSSQL
       MultiAZ: !Ref MultiAzAudit
       MasterUsername: !Ref DBUser
-      MasterUserPassword: !Ref DBPassword
+      MasterUserPassword: !If [ isSecretPass, !Join [ '', [ '{{resolve:secretsmanager:', !Ref DBPassword, ':SecretString:password}}' ] ], !Ref DBPassword ]
       AllocatedStorage: !Ref AuditDBStorageSize
       VPCSecurityGroups:
         - !Ref DSConfigSG
@@ -539,7 +542,7 @@ Resources:
       Engine: !If [ AuditAuroraPostgres, !FindInMap [ Consts, V1, AuditAuroraEnginePg ], !FindInMap [ Consts, V1, AuditAuroraEngineMy ] ]
       EngineVersion: !If [ AuditAuroraPostgres, !FindInMap [ Consts, V1, AuditAuroraEngineVersionPg ], !FindInMap [ Consts, V1, AuditAuroraEngineVersionMy ] ]
       MasterUsername: !Ref DBUser
-      MasterUserPassword: !Ref DBPassword
+      MasterUserPassword: !If [ isSecretPass, !Join [ '', [ '{{resolve:secretsmanager:', !Ref DBPassword, ':SecretString:password}}' ] ], !Ref DBPassword ]
       DBSubnetGroupName: !Ref DSDBSubnetGrp
       VpcSecurityGroupIds:
         - Ref: DSConfigSG
@@ -763,6 +766,7 @@ Resources:
       ManagedPolicyArns:
           - !If [HasS3Name, !Ref S3AccessPolicy, !Ref 'AWS::NoValue']
           - !If [HasS3OracleWallet, !Ref OracleWalletS3AccessPolicy, !Ref 'AWS::NoValue']
+          - !If [isSecretPass, !Ref DBPasswordSecretAccessPolicy, !Ref 'AWS::NoValue']
       Policies:
         - PolicyName: !Join [ '', [ !Ref 'AWS::StackName', '-DataSunrise-Policy' ] ]
           PolicyDocument:
@@ -1010,6 +1014,19 @@ Resources:
             Resource:
               - !Join [ '', [ 'arn:aws:s3:::', !Ref TDBOracleWalletBucket,'/*' ] ]
               - !Join [ '', [ 'arn:aws:s3:::', !Ref TDBOracleWalletBucket ] ]
+
+  DBPasswordSecretAccessPolicy:
+    Type: 'AWS::IAM::ManagedPolicy'
+    Condition: isSecretPass
+    Properties:
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - 'secretsmanager:GetSecretValue'
+            Resource:
+              -  !Ref DBPassword
 
 Outputs:
   DatasunriseConsoleURL:
