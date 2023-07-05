@@ -10,6 +10,8 @@ Mappings:
       AuditInternalParameterPg: '1'
       AuditInternalParameterMy: '2'
       AuditInternalParameterMs: '6'
+      AuditInternalParameterAuMy: '4'
+      AuditInternalParameterAuPg: '7'
       DictionaryInternalParameterPg: postgresql
       DictionaryInternalParameterMy: mysql
       DictionaryInternalParameterMs: mssql
@@ -679,7 +681,7 @@ Resources:
             - Name: DICTIONARY_PASS
               Value: !Ref DBPassword
             - Name: AUDIT_TYPE
-              Value: !If [AuditPostgres, !FindInMap [Consts, V1, AuditInternalParameterPg], !If [AuditMysql, !FindInMap [Consts, V1, AuditInternalParameterMy], !If [AuditMssql, !FindInMap [Consts, V1, AuditInternalParameterMs], !If [AuditAuroraPostgres, !FindInMap [Consts, V1, AuditInternalParameterPg], !FindInMap [Consts, V1, AuditInternalParameterMy]]]]]
+              Value: !If [AuditPostgres, !FindInMap [Consts, V1, AuditInternalParameterPg], !If [AuditMysql, !FindInMap [Consts, V1, AuditInternalParameterMy], !If [AuditMssql, !FindInMap [Consts, V1, AuditInternalParameterMs], !If [AuditAuroraPostgres, !FindInMap [Consts, V1, AuditInternalParameterAuPg], !FindInMap [Consts, V1, AuditInternalParameterAuMy]]]]]
             - Name: AUDIT_HOST
               Value: !If [isAuroraCluster, !GetAtt DSAuditDBCluster.Endpoint.Address, !GetAtt DSAuditDB.Endpoint.Address]
             - Name: AUDIT_PORT
