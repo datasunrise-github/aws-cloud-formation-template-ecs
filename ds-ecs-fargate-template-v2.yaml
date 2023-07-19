@@ -21,19 +21,19 @@ Mappings:
       AuditEnginePg: postgres
       AuditEngineMy: mysql
       AuditEngineMs: sqlserver-se
-      EngineVersionPg: '14'
-      EngineVersionMy: '5.7'
-      EngineVersionMs: '14.00'
+      EngineVersionPg: '15'
+      EngineVersionMy: '8.0'
+      EngineVersionMs: '15.00'
       AuditAuroraEnginePg: aurora-postgresql
       AuditAuroraEngineMy: aurora-mysql
-      AuditAuroraEngineVersionPg: '13'
-      AuditAuroraEngineVersionMy: '5.7'
-      ParameterGroupFamilyPg: 'postgres14'
-      ParameterGroupFamilyMy: 'MySQL5.7'
-      DictionaryParameterGroupFamilyMs: 'sqlserver-se-14.0'
-      AuditParameterGroupFamilyMs: 'sqlserver-se-14.0'
-      ParameterGroupFamilyPgCluster: aurora-postgresql13
-      ParameterGroupFamilyMyCluster: aurora-mysql5.7
+      AuditAuroraEngineVersionPg: '15'
+      AuditAuroraEngineVersionMy: '8.0'
+      ParameterGroupFamilyPg: 'postgres15'
+      ParameterGroupFamilyMy: 'MySQL8.0'
+      DictionaryParameterGroupFamilyMs: 'sqlserver-se-15.0'
+      AuditParameterGroupFamilyMs: 'sqlserver-se-15.0'
+      ParameterGroupFamilyPgCluster: aurora-postgresql15
+      ParameterGroupFamilyMyCluster: aurora-mysql8.0
       PostgresLicenseModel: 'postgresql-license'
       MysqlLicenseModel: 'general-public-license'
       MssqlLicenseModel: 'license-included'
