@@ -306,6 +306,7 @@ Parameters:
       - SAP HANA
       - Teradata
       - Vertica
+      - Elasticsearch
       - ''
   TDBHost:
     Type: String
