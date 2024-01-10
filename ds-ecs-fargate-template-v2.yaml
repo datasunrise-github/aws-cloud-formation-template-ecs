@@ -95,6 +95,11 @@ Parameters:
       - db.m5.12xlarge
       - db.m5.16xlarge
       - db.m5.24xlarge
+      - db.m6i.large
+      - db.m6i.xlarge
+      - db.m6i.2xlarge
+      - db.m6i.4xlarge
+      - db.m6i.8xlarge
       - db.r5.large
       - db.r5.xlarge
       - db.r5.2xlarge
