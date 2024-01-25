@@ -846,6 +846,17 @@ Resources:
       ToPort: !Ref ContainerProxyPort
       CidrIp: !Ref UserLocationCIDR
 
+  ProxyPortIngress11010:
+    Type: AWS::EC2::SecurityGroupIngress
+    DependsOn:
+      - ContainerSecurityGroup
+    Properties:
+      GroupId: !GetAtt ContainerSecurityGroup.GroupId
+      IpProtocol: tcp
+      FromPort: '11000'
+      ToPort: '11010'
+      CidrIp: !Ref VpcCidr
+
   TDBPortIngress:
     Type: AWS::EC2::SecurityGroupIngress
     DependsOn:
@@ -857,19 +868,6 @@ Resources:
       FromPort: !Ref TDBPort
       ToPort: !Ref TDBPort
       CidrIp: !Ref UserLocationCIDR
-
-  # to healthcheck proxies between containers
-  TDBProxyPortIngress:
-    Type: AWS::EC2::SecurityGroupIngress
-    DependsOn:
-      - ContainerSecurityGroup
-    Condition: isTDBPort
-    Properties:
-      GroupId: !GetAtt ContainerSecurityGroup.GroupId
-      IpProtocol: tcp
-      FromPort: '11002'
-      ToPort: '11002'
-      CidrIp: !Ref VpcCidr
 
   TDBSGIngressRule:
     Type: AWS::EC2::SecurityGroupIngress
