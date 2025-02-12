@@ -791,6 +791,8 @@ Resources:
                   - 'rds:DescribeDBInstances'
                   - 'rds:DescribeDBClusters'
                   - 'aws-marketplace:MeterUsage'
+                  - 'events:PutEvents'
+                  - 'events:PutRule'
                 Resource: '*'
 
 
