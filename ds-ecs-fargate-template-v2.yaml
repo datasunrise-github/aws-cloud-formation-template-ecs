@@ -21,18 +21,18 @@ Mappings:
       AuditEnginePg: postgres
       AuditEngineMy: mysql
       AuditEngineMs: sqlserver-se
-      EngineVersionPg: '15'
+      EngineVersionPg: '17'
       EngineVersionMy: '8.0'
-      EngineVersionMs: '15.00'
+      EngineVersionMs: '16.00'
       AuditAuroraEnginePg: aurora-postgresql
       AuditAuroraEngineMy: aurora-mysql
-      AuditAuroraEngineVersionPg: '15'
+      AuditAuroraEngineVersionPg: '17'
       AuditAuroraEngineVersionMy: '8.0'
-      ParameterGroupFamilyPg: 'postgres15'
+      ParameterGroupFamilyPg: 'postgres16'
       ParameterGroupFamilyMy: 'MySQL8.0'
-      DictionaryParameterGroupFamilyMs: 'sqlserver-se-15.0'
-      AuditParameterGroupFamilyMs: 'sqlserver-se-15.0'
-      ParameterGroupFamilyPgCluster: aurora-postgresql15
+      DictionaryParameterGroupFamilyMs: 'sqlserver-se-16.0'
+      AuditParameterGroupFamilyMs: 'sqlserver-se-16.0'
+      ParameterGroupFamilyPgCluster: aurora-postgresql17
       ParameterGroupFamilyMyCluster: aurora-mysql8.0
       PostgresLicenseModel: 'postgresql-license'
       MysqlLicenseModel: 'general-public-license'
@@ -793,6 +793,13 @@ Resources:
                   - 'aws-marketplace:MeterUsage'
                   - 'events:PutEvents'
                   - 'events:PutRule'
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - 'ses:SendEmail'
+                  - 'ses:SendRawEmail'
+                  - 'ses:GetSendQuota'
+                  - 'ses:GetSendStatistics'
                 Resource: '*'
 
 
