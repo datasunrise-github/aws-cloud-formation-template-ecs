@@ -635,8 +635,6 @@ Parameters:
       - 'true'
       - 'false'
     Default: 'false'
-
-
 Metadata:
   'AWS::CloudFormation::Interface':
     ParameterGroups:
@@ -1026,6 +1024,10 @@ Resources:
               Value: !Ref 'AWS::StackName'
             - Name: DS_SERVER_NAME_PREFIX
               Value: !Ref DSPrefix
+            - Name: REDIRECT_ON_PUBLIC
+              Value: 'true'
+            - Name: PUBLIC_HOSTNAME
+              Value: !GetAtt LoadBalancer.DNSName
 
 
   # A role needed by ECS
