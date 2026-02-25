@@ -28,7 +28,7 @@ Mappings:
       AuditAuroraEngineMy: aurora-mysql
       AuditAuroraEngineVersionPg: '17'
       AuditAuroraEngineVersionMy: '8.0'
-      ParameterGroupFamilyPg: 'postgres16'
+      ParameterGroupFamilyPg: 'postgres17'
       ParameterGroupFamilyMy: 'MySQL8.0'
       DictionaryParameterGroupFamilyMs: 'sqlserver-se-16.0'
       AuditParameterGroupFamilyMs: 'sqlserver-se-16.0'
